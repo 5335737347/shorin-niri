@@ -7,8 +7,7 @@ binds {
     //
     // "Mod" is a special modifier equal to Super when running on a TTY, and to Alt
     // when running as a winit window.
-    //
-    // Most actions that you can bind here can also be invoked programmatically with
+    // // Most actions that you can bind here can also be invoked programmatically with
     // `niri msg action do-something`.
     // Mod-Shift-/, which is usually the same as Mod-?,
     // shows a list of important hotkeys.
@@ -38,6 +37,13 @@ binds {
     Mod+Ctrl+G hotkey-overlay-title="切换工作区时自动跟随 Follow when switch workspaces" {spawn "nirius" "toggle-follow-mode" ;} 
     Mod+Shift+Q hotkey-overlay-title="快速聚焦到QQ Quick focus QQ" {spawn "nirius" "focus" "--app-id" "QQ" ;} 
     Mod+Shift+W hotkey-overlay-title="快速聚焦到微信 Quick focus Wechat" {spawn "nirius" "focus" "--app-id" "wechat" ;} 
+
+    //niri-shorin-fork
+    Mod+Alt+WheelScrollUp   { adjust-magnifier-zoom 0.2; }
+    Mod+Alt+WheelScrollDown { adjust-magnifier-zoom -0.2; }
+    Mod+Shift+Z         { toggle-magnifier; }
+
+
 
     
 

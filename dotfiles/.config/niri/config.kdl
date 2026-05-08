@@ -2,9 +2,7 @@
 //  ██      ██   ██ ██    ██ ██   ██    ██ ██  ██ 
 //  ███████ ███████ ██    ██ ██████  ██ ██ ██  ██ 
 //       ██ ██   ██ ██    ██ ██   ██ ██ ██  ██ ██ 
-//  ██████  ██   ██  ██████  ██   ██ ██ ██   ████ 
-
-// 这是niri的配置文件，我写了很多注释方便阅读，同时保留了部分英文注释
+//  ██████  ██   ██  ██████  ██   ██ ██ ██   ████ // 这是niri的配置文件，我写了很多注释方便阅读，同时保留了部分英文注释
 // 自25.11版本起，niri的配置文件支持了拆分，每一条include都代表把已经拆分出去的配置文件嵌入进来。
 include "binds.kdl"
 include optional=true "rule.kdl"
@@ -37,7 +35,6 @@ environment {
     EDITOR "vim"
     
 }
-
 // 光标配置
 cursor {
     // 主题，存放路径在~/.local/share/icons
@@ -46,6 +43,14 @@ cursor {
     xcursor-size 30
     // 闲置多少毫秒自动隐藏光标
     hide-after-inactive-ms 15000
+    shake-to-enlarge {
+	//off
+	grow
+	grow-speed 0.01
+        threshold 2000
+	hold-duration-ms 1500
+	zoom-factor 5
+    }
 }
  
 // 带缩略图的alt+tab切换窗口功能（但是我设置的是super+tab，更符合逻辑）
@@ -201,7 +206,7 @@ spawn-at-startup "fcitx5"
 spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
 	// wayland <--> x11 剪贴板同步 这个包是我自己推的clipsync-git
 spawn-at-startup "systemctl" "--user" "start" "linuxqq-clipsync"
-// 闲置时自动熄屏锁屏睡眠的脚本，说实话这东西毫无用处，super+alt+P可以熄屏休眠
+// 闲置时自动熄屏锁屏睡眠的脚本，说实话这东西毫无用处
 // spawn-at-startup "~/.config/niri/scripts/swayidle.sh"
 // 大写锁定键的osd显示
 spawn-at-startup "swayosd-server"
@@ -216,7 +221,7 @@ spawn-at-startup "~/.local/bin/niri-sidebar" "listen"
 // 允许root通过用户的xwayland打开窗口
 spawn-at-startup "xhost" "+si:localuser:root"
 // 音频调整程序，easyeffects，-w可以在后台启动
-//spawn-at-startup "flatpak" "run" "com.github.wwmm.easyeffects" "-w"
+spawn-at-startup "flatpak" "run" "com.github.wwmm.easyeffects" "-w"
 // nirius
 spawn-at-startup "niriusd"
 
@@ -228,6 +233,13 @@ hotkey-overlay {
 
 // 隐藏窗口标题栏
 prefer-no-csd
+
+magnifier {
+    // off
+    zoom-factor 3
+    //track-cursor false 
+    //scale-cursor false
+}
 
 
 
