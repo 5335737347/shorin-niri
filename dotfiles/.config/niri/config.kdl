@@ -238,13 +238,13 @@ prefer-no-csd
 magnifier {
     // off
     zoom-factor 3
-    //track-cursor false 
+    track-cursor false 
     //scale-cursor false
 }
 
 grid-overview {
-    gap 16
-    padding 100
+    gap 20
+    padding 80
     focused-column-scale 1.04
 }
 
