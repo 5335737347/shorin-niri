@@ -69,7 +69,8 @@ get_last_system_update_info() {
     fi
 
     local last_line timestamp last_update current_time age
-    last_line=$(tac "$PACMAN_LOG" 2>/dev/null | grep -m1 '\[ALPM\] upgraded ' || true)
+    # Count only full system upgrade commands, not AUR/local package upgrades.
+    last_line=$(tac "$PACMAN_LOG" 2>/dev/null | grep -m1 -E "\[PACMAN\] Running 'pacman ([^']*-S[^[:space:]']*u|[^']*-S[[:space:]][^']*[[:space:]](-u|--sysupgrade)|[^']*--sync[^']*[[:space:]](-u|--sysupgrade))" || true)
 
     if [[ -z "$last_line" ]]; then
         printf '上次系统更新：无记录'
