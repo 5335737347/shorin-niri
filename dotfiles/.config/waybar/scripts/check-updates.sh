@@ -13,6 +13,7 @@ CACHE_FILE="$CACHE_DIR/updates.json"
 LOCK_FILE="/tmp/waybar-updates.lock"
 MAX_LINES=50
 CHECK_INTERVAL=3600
+PACMAN_LOG="/var/log/pacman.log"
 
 # 确保缓存目录存在
 mkdir -p "$CACHE_DIR"
@@ -38,16 +39,70 @@ on_sigusr1() {
 # 初始绑定信号
 trap 'on_sigusr1' SIGUSR1
 
+# === 上次系统更新时间 ===
+format_age() {
+    local seconds=$1
+
+    if [[ "$seconds" -lt 0 ]]; then
+        seconds=0
+    fi
+
+    if [[ "$seconds" -lt 60 ]]; then
+        printf '刚刚'
+    elif [[ "$seconds" -lt 3600 ]]; then
+        printf '%d 分钟前' $((seconds / 60))
+    elif [[ "$seconds" -lt 86400 ]]; then
+        printf '%d 小时前' $((seconds / 3600))
+    elif [[ "$seconds" -lt 2592000 ]]; then
+        printf '%d 天前' $((seconds / 86400))
+    elif [[ "$seconds" -lt 31536000 ]]; then
+        printf '%d 个月前' $((seconds / 2592000))
+    else
+        printf '%d 年前' $((seconds / 31536000))
+    fi
+}
+
+get_last_system_update_info() {
+    if [[ ! -r "$PACMAN_LOG" ]]; then
+        printf '上次系统更新：未知'
+        return
+    fi
+
+    local last_line timestamp last_update current_time age
+    last_line=$(tac "$PACMAN_LOG" 2>/dev/null | grep -m1 '\[ALPM\] upgraded ' || true)
+
+    if [[ -z "$last_line" ]]; then
+        printf '上次系统更新：无记录'
+        return
+    fi
+
+    timestamp=${last_line%%]*}
+    timestamp=${timestamp#\[}
+    last_update=$(date -d "$timestamp" +%s 2>/dev/null || true)
+
+    if [[ -z "$last_update" ]]; then
+        printf '上次系统更新：未知'
+        return
+    fi
+
+    current_time=$(date +%s)
+    age=$((current_time - last_update))
+    printf '上次系统更新：%s' "$(format_age "$age")"
+}
+
 # === 生成 JSON 函数 ===
 generate_json() {
     local updates=$1
     local count
+    local last_update_info
+
+    last_update_info=$(get_last_system_update_info)
     
     updates=$(echo "$updates" | grep -v '^\s*$' || true)
     
     if [[ -z "$updates" ]]; then
         count=0
-        printf '{"text": "", "alt": "updated", "tooltip": "System is up to date"}\n'
+        printf '{"text": "", "alt": "updated", "tooltip": "System is up to date\\n----------------\\n%s"}\n' "$last_update_info"
         return
     else
         count=$(echo "$updates" | wc -l)
@@ -63,7 +118,41 @@ generate_json() {
         tooltip_text=$(echo "$updates" | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | head -c -2 || true)
     fi
 
+    tooltip_text="${tooltip_text}\\n----------------\\n${last_update_info}"
+
     printf '{"text": "%s", "alt": "has-updates", "tooltip": "%s"}\n' "$count" "$tooltip_text"
+}
+
+# === 从缓存文本重新生成输出，避免 tooltip 的相对时间被 JSON 缓存卡住 ===
+emit_cached_json() {
+    local repo_cache="${CACHE_FILE%.json}-repo.txt"
+    local aur_cache="${CACHE_FILE%.json}-aur.txt"
+    local REPO_UPDATES=""
+    local AUR_UPDATES=""
+    local ALL_UPDATES=""
+
+    if [[ ! -f "$repo_cache" && ! -f "$aur_cache" ]]; then
+        cat "$CACHE_FILE"
+        return
+    fi
+
+    if [[ -f "$repo_cache" ]]; then
+        REPO_UPDATES=$(<"$repo_cache")
+    fi
+
+    if [[ -f "$aur_cache" ]]; then
+        AUR_UPDATES=$(<"$aur_cache")
+    fi
+
+    if [[ -n "$REPO_UPDATES" ]] && [[ -n "$AUR_UPDATES" ]]; then
+        ALL_UPDATES="$REPO_UPDATES"$'\n'"$AUR_UPDATES"
+    elif [[ -n "$REPO_UPDATES" ]]; then
+        ALL_UPDATES="$REPO_UPDATES"
+    else
+        ALL_UPDATES="$AUR_UPDATES"
+    fi
+
+    generate_json "$ALL_UPDATES"
 }
 
 # === 真正的检查逻辑 ===
@@ -105,7 +194,7 @@ run_check() {
         age=$((current_time - file_time))
         
         if [[ $age -lt $((CHECK_INTERVAL - 10)) ]]; then
-            cat "$CACHE_FILE"
+            emit_cached_json
             return
         fi
     fi
@@ -131,9 +220,9 @@ run_check() {
 
     # 3. 最终输出缓存内容
     if [[ -f "$CACHE_FILE" ]]; then
-        cat "$CACHE_FILE"
+        emit_cached_json
     else
-        printf '{"text": "...", "alt": "updated", "tooltip": "Checking..."}\n'
+        printf '{"text": "...", "alt": "updated", "tooltip": "Checking...\\n----------------\\n%s"}\n' "$(get_last_system_update_info)"
     fi
 }
 
