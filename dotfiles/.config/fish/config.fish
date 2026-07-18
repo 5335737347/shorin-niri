@@ -2,7 +2,7 @@ if status is-interactive
     # Commands to run in interactive sessions can go here
 end
 set fish_greeting ""
-set -p PATH ~/.local/bin
+fish_add_path ~/.local/bin
 starship init fish | source
 zoxide init fish --cmd cd | source
 
@@ -15,15 +15,18 @@ function y
 	rm -f -- "$tmp"
 end
 
-function cat 
-	command bat $argv
+function cat
+	command bat -- $argv
 end
 
 function ls
-	command eza --icons $argv
+	command eza --icons=auto -- $argv
+end
+function ll
+	command eza --icons=auto -lh -- $argv
 end
 function lt
-	command eza --icons --tree $argv
+	command eza --icons=auto --tree -- $argv
 end
 
 # grub
@@ -52,6 +55,6 @@ function 卸载
 end 
 
 # Added by LM Studio CLI (lms)
-set -gx PATH $PATH /home/shorin/.lmstudio/bin
+fish_add_path ~/.lmstudio/bin
 # End of LM Studio CLI section
 
